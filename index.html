@@ -154,6 +154,15 @@
   }
   .save-btn:hover{filter:brightness(1.08);}
   .save-btn:disabled{opacity:.5;cursor:not-allowed;}
+  .footer-actions{display:flex;gap:10px;flex-wrap:wrap;}
+  .delete-btn{
+    background:transparent;color:var(--white);border:1px solid rgba(255,255,255,.35);
+    border-radius:10px;padding:13px 20px;font-family:'Tajawal',sans-serif;font-weight:700;font-size:15px;
+    cursor:pointer;white-space:nowrap;transition:background .15s ease, border-color .15s ease;
+  }
+  .delete-btn:hover{background:rgba(156,59,46,.3);border-color:var(--red);}
+  .delete-btn:disabled{opacity:.5;cursor:not-allowed;}
+  .delete-btn[hidden]{display:none;}
 
   /* History */
   .section-title{
@@ -188,6 +197,12 @@
   td.net-cash{color:var(--green);font-weight:600;}
   td.net-net{color:var(--indigo);font-weight:600;}
   td.net-safe{color:var(--amber);font-weight:600;}
+  td.row-actions{white-space:nowrap;}
+  .row-del-btn{
+    background:transparent;border:1px solid var(--line);color:var(--red);
+    border-radius:7px;width:26px;height:26px;cursor:pointer;font-size:13px;line-height:1;
+  }
+  .row-del-btn:hover{background:#F6E4E1;border-color:var(--red);}
 
   .empty-state{
     text-align:center;padding:30px 16px;color:var(--ink-soft);font-size:13px;
@@ -249,7 +264,7 @@
   </div>
 
   <div class="no-url-banner" id="noUrlBanner" style="display:none;">
-    <span>لسه ما ربطت البرنامج بجوجل شيت. اضغط الزر عشان تحط الرابط.</span>
+    <span>لم يتم الربط</span>
     <button id="connectNowBtn">ربط الآن</button>
   </div>
 
@@ -296,7 +311,6 @@
         </div>
         <div class="field">
           <label>الشبكة للآخرين
-            <small>مبالغ محلات ثانية، للتوثيق فقط</small>
           </label>
           <input type="number" id="networkOthers" inputmode="decimal" placeholder="0">
         </div>
@@ -351,7 +365,10 @@
       <div class="lbl">إجمالي اليوم</div>
       <div class="val" id="sum_total">٠٫٠٠</div>
     </div>
-    <button class="save-btn" id="saveBtn">حفظ اليوم</button>
+    <div class="footer-actions">
+      <button class="delete-btn" id="deleteBtn" hidden>حذف اليوم</button>
+      <button class="save-btn" id="saveBtn">حفظ اليوم</button>
+    </div>
   </div>
 
   <div class="section-title">السجل الشهري</div>
@@ -365,8 +382,6 @@
   <div class="modal">
     <h3>ربط جوجل شيت</h3>
     <p>
-      حط رابط الويب أب (Web app URL) اللي حصلت عليه بعد نشر كود Apps Script على شيتك.
-      البيانات كلها بتتخزن بشيتك الخاص، ما تتخزن عندنا.
     </p>
     <input type="text" id="urlInput" placeholder="https://script.google.com/macros/s/....../exec">
     <div class="modal-actions">
@@ -486,7 +501,7 @@ function openModal(){
 function closeModal(){ document.getElementById('modalBg').classList.remove('show'); }
 document.getElementById('modalSave').onclick = () => {
   const url = document.getElementById('urlInput').value.trim();
-  if(!url){ showToast('حط الرابط أول'); return; }
+  if(!url){ showToast('الرابط أول'); return; }
   closeModal();
   saveSettings(url);
 };
@@ -514,7 +529,7 @@ async function refreshHistory(){
 function renderHistory(){
   const container = document.getElementById('historyContainer');
   if(!history.length){
-    container.innerHTML = '<div class="empty-state">لسه ما فيه بيانات محفوظة.</div>';
+    container.innerHTML = '<div class="empty-state">لا توجد بيانات محفوظة.</div>';
     return;
   }
   const months = {};
@@ -551,7 +566,7 @@ function renderHistory(){
           <thead><tr>
             <th>التاريخ</th><th>مبيعات</th><th>مشتريات</th><th>مصاريف</th>
             <th>صافي الكاش</th><th>شبكة للمحل</th><th>للآخرين</th><th>صافي الشبكة</th>
-            <th>إيداع</th><th>صرف</th><th>متبقي الصندوق</th>
+            <th>إيداع</th><th>صرف</th><th>متبقي الصندوق</th><th></th>
           </tr></thead>
           <tbody>
             ${rows.sort((a,b)=> a.date<b.date?1:-1).map(r=>`
@@ -567,6 +582,7 @@ function renderHistory(){
                 <td>${fmt(r.deposit)}</td>
                 <td>${fmt(r.withdraw)}</td>
                 <td class="net-safe">${fmt(r.netSafe)}</td>
+                <td class="row-actions"><button type="button" class="row-del-btn" data-date="${r.date}" title="حذف">✕</button></td>
               </tr>`).join('')}
           </tbody>
         </table>
@@ -579,10 +595,18 @@ function renderHistory(){
     h.addEventListener('click', ()=> h.parentElement.classList.toggle('collapsed'));
   });
   container.querySelectorAll('.editable-row').forEach(row=>{
-    row.addEventListener('click', ()=>{
+    row.addEventListener('click', (ev)=>{
+      if(ev.target.closest('.row-del-btn')) return;
       document.getElementById('dateInput').value = row.dataset.date;
       loadDateIntoForm(row.dataset.date);
       window.scrollTo({top:0, behavior:'smooth'});
+    });
+  });
+  container.querySelectorAll('.row-del-btn').forEach(btn=>{
+    btn.addEventListener('click', async (ev)=>{
+      ev.stopPropagation();
+      const date = btn.dataset.date;
+      await deleteDay(date);
     });
   });
 }
@@ -591,6 +615,7 @@ function loadDateIntoForm(dateStr){
   const cleanStr = cleanDateStr(dateStr);
   const existing = history.find(r=>r.date === cleanStr);
   const pill = document.getElementById('statusPill');
+  const deleteBtn = document.getElementById('deleteBtn');
   if(existing){
     document.getElementById('sales').value = existing.sales;
     document.getElementById('purchases').value = existing.purchases;
@@ -602,11 +627,13 @@ function loadDateIntoForm(dateStr){
     pill.textContent = 'يوم محفوظ';
     pill.classList.add('editing');
     isEditingExisting = true;
+    deleteBtn.hidden = false;
   } else {
     ids.forEach(id => document.getElementById(id).value = '');
     pill.textContent = 'يوم جديد';
     pill.classList.remove('editing');
     isEditingExisting = false;
+    deleteBtn.hidden = true;
   }
   recalc();
 }
@@ -637,11 +664,42 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
       showToast('خطأ: ' + (json.message || 'تعذر الحفظ'));
     }
   }catch(err){
-    showToast('صار خطأ أثناء الحفظ، حاول مرة ثانية');
+    showToast('حاول مرة أخرى');
   }finally{
     btn.disabled = false;
     btn.textContent = 'حفظ اليوم';
   }
+});
+
+async function deleteDay(date){
+  if(!webAppUrl || !date) return;
+  if(!confirm('هل أنت متأكد من حذف بيانات يوم ' + date)) return;
+  try{
+    const res = await fetch(webAppUrl, {
+      method: 'POST',
+      headers: {'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action:'delete', date: cleanDateStr(date) })
+    });
+    const json = await res.json();
+    if(json.status === 'ok'){
+      showToast('تم حذف يوم ' + date);
+      const currentDate = document.getElementById('dateInput').value;
+      await refreshHistory();
+      if(cleanDateStr(currentDate) === cleanDateStr(date)){
+        loadDateIntoForm(currentDate);
+      }
+    } else {
+      showToast('خطأ: ' + (json.message || 'تعذر الحذف'));
+    }
+  }catch(err){
+    showToast('خطأ أثناء الحذف، حاول مرة أخرى');
+  }
+}
+
+document.getElementById('deleteBtn').addEventListener('click', ()=>{
+  const date = document.getElementById('dateInput').value;
+  if(!date || !isEditingExisting) return;
+  deleteDay(date);
 });
 
 // init
