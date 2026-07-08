@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>دفتر حسابات المحل</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #F3EEDC;
+    --paper-deep: #EAE2C8;
+    --ink: #2B2A25;
+    --ink-soft: #6B6656;
+    --green: #1E4D3D;
+    --green-soft: #E4EEE7;
+    --indigo: #2E3A59;
+    --indigo-soft: #E7E9F1;
+    --gold: #A9762F;
+    --red: #9C3B2E;
+    --line: #C9BFA0;
+    --white: #FBF8EF;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans Arabic', sans-serif;
+    min-height:100vh;
+    padding:24px 14px 60px;
+  }
+  .wrap{max-width:980px;margin:0 auto;}
+
+  /* Header */
+  .topbar{
+    display:flex;justify-content:space-between;align-items:flex-start;
+    margin-bottom:22px;flex-wrap:wrap;gap:12px;
+  }
+  .brand h1{
+    font-family:'Tajawal',sans-serif;font-weight:900;
+    font-size:26px;margin:0 0 4px;color:var(--ink);
+  }
+  .brand p{margin:0;color:var(--ink-soft);font-size:13px;}
+  .gear-btn{
+    background:var(--white);border:1px solid var(--line);
+    width:40px;height:40px;border-radius:10px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    font-size:18px;color:var(--ink-soft);flex-shrink:0;
+    transition:transform .15s ease, background .15s ease;
+  }
+  .gear-btn:hover{background:var(--paper-deep);transform:rotate(25deg);}
+
+  .date-row{
+    display:flex;align-items:center;gap:10px;background:var(--white);
+    border:1px solid var(--line);border-radius:12px;padding:10px 14px;
+    margin-bottom:20px;flex-wrap:wrap;
+  }
+  .date-row label{font-size:13px;color:var(--ink-soft);white-space:nowrap;}
+  .date-row input[type=date]{
+    font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;
+    border:none;background:transparent;color:var(--ink);outline:none;
+  }
+  .status-pill{
+    margin-inline-start:auto;font-size:12px;padding:4px 10px;border-radius:20px;
+    background:var(--indigo-soft);color:var(--indigo);font-weight:600;
+  }
+  .status-pill.editing{background:#F6E9D8;color:var(--gold);}
+
+  /* Ledger cards */
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
+  @media(max-width:720px){.cards{grid-template-columns:1fr;}}
+
+  .card{
+    background:var(--white);border-radius:16px;overflow:hidden;
+    border:1px solid var(--line);
+    box-shadow:0 1px 0 rgba(0,0,0,0.02);
+  }
+  .card-head{
+    padding:16px 18px;font-family:'Tajawal',sans-serif;font-weight:700;font-size:16px;
+    color:#fff;display:flex;align-items:center;justify-content:space-between;
+  }
+  .card.cash .card-head{background:var(--green);}
+  .card.network .card-head{background:var(--indigo);}
+  .card-head span.tag{font-size:11px;font-weight:500;opacity:.85;font-family:'IBM Plex Sans Arabic';}
+
+  .card-body{padding:16px 18px 6px;}
+
+  .field{
+    display:flex;align-items:center;gap:10px;padding:9px 0;
+    border-bottom:1px dashed var(--line);
+  }
+  .field label{
+    flex:1;font-size:14px;color:var(--ink);
+  }
+  .field small{display:block;color:var(--ink-soft);font-size:11px;margin-top:1px;}
+  .field input{
+    width:118px;text-align:end;font-family:'IBM Plex Mono',monospace;
+    font-size:15px;font-weight:600;border:1px solid var(--line);
+    border-radius:8px;padding:7px 9px;background:var(--paper);color:var(--ink);
+    outline:none;
+  }
+  .field input:focus{border-color:var(--gold);background:#fff;}
+
+  /* Receipt tape */
+  .tape{
+    margin:14px 0 6px;padding:14px 16px 18px;
+    background:repeating-linear-gradient(180deg,#fff,#fff 26px, #FAF7EC 26px, #FAF7EC 52px);
+    border:1px dashed var(--line);border-radius:10px;
+    font-family:'IBM Plex Mono',monospace;font-size:13px;
+    position:relative;
+  }
+  .tape::after{
+    content:"";position:absolute;left:14px;right:14px;bottom:-6px;height:12px;
+    background-image:radial-gradient(circle at 6px 0, var(--paper) 5px, transparent 6px);
+    background-size:12px 12px;background-repeat:repeat-x;
+  }
+  .tape-row{display:flex;justify-content:space-between;padding:2px 0;color:var(--ink-soft);}
+  .tape-row.total{
+    border-top:1px solid var(--line);margin-top:6px;padding-top:8px;
+    font-weight:700;font-size:16px;color:var(--ink);
+  }
+  .card.cash .tape-row.total{color:var(--green);}
+  .card.network .tape-row.total{color:var(--indigo);}
+  .tape-row.total.neg{color:var(--red);}
+
+  .hint{font-size:11.5px;color:var(--ink-soft);padding:8px 18px 14px;line-height:1.6;}
+
+  /* Footer summary */
+  .footer-summary{
+    background:var(--ink);color:var(--white);border-radius:16px;
+    padding:18px 20px;display:flex;flex-wrap:wrap;gap:18px;justify-content:space-between;
+    align-items:center;margin-bottom:22px;
+  }
+  .footer-summary .box{text-align:center;flex:1;min-width:120px;}
+  .footer-summary .box .lbl{font-size:12px;opacity:.7;margin-bottom:4px;}
+  .footer-summary .box .val{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:19px;}
+  .save-btn{
+    background:var(--gold);color:#fff;border:none;border-radius:10px;
+    padding:13px 26px;font-family:'Tajawal',sans-serif;font-weight:700;font-size:15px;
+    cursor:pointer;white-space:nowrap;transition:filter .15s ease;
+  }
+  .save-btn:hover{filter:brightness(1.08);}
+  .save-btn:disabled{opacity:.5;cursor:not-allowed;}
+
+  /* History */
+  .section-title{
+    font-family:'Tajawal',sans-serif;font-weight:700;font-size:17px;
+    margin:26px 0 12px;display:flex;align-items:center;gap:8px;
+  }
+  .section-title::before{content:"";width:5px;height:18px;background:var(--gold);border-radius:3px;}
+
+  .month-block{
+    background:var(--white);border:1px solid var(--line);border-radius:14px;
+    margin-bottom:14px;overflow:hidden;
+  }
+  .month-head{
+    padding:12px 16px;background:var(--paper-deep);display:flex;justify-content:space-between;
+    align-items:center;font-weight:700;font-family:'Tajawal',sans-serif;font-size:14px;cursor:pointer;
+  }
+  .month-head .totals{display:flex;gap:14px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:600;}
+  .month-head .totals .c{color:var(--green);}
+  .month-head .totals .n{color:var(--indigo);}
+  .chev{transition:transform .2s ease;color:var(--ink-soft);}
+  .month-block.collapsed .chev{transform:rotate(-90deg);}
+  .month-block.collapsed .rows-wrap{display:none;}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th,td{padding:8px 10px;text-align:center;border-top:1px solid var(--paper-deep);}
+  th{color:var(--ink-soft);font-weight:600;font-size:11.5px;}
+  td.date-cell{font-family:'IBM Plex Mono',monospace;font-weight:600;}
+  tr.editable-row{cursor:pointer;}
+  tr.editable-row:hover{background:var(--green-soft);}
+  td.net-cash{color:var(--green);font-weight:600;}
+  td.net-net{color:var(--indigo);font-weight:600;}
+
+  .empty-state{
+    text-align:center;padding:30px 16px;color:var(--ink-soft);font-size:13px;
+    background:var(--white);border:1px dashed var(--line);border-radius:14px;
+  }
+
+  /* Modal */
+  .modal-bg{
+    position:fixed;inset:0;background:rgba(43,42,37,.55);display:none;
+    align-items:center;justify-content:center;z-index:50;padding:16px;
+  }
+  .modal-bg.show{display:flex;}
+  .modal{
+    background:var(--white);border-radius:16px;padding:22px;max-width:440px;width:100%;
+  }
+  .modal h3{font-family:'Tajawal',sans-serif;margin:0 0 6px;font-size:17px;}
+  .modal p{font-size:13px;color:var(--ink-soft);line-height:1.7;margin:0 0 14px;}
+  .modal input[type=text]{
+    width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;margin-bottom:12px;outline:none;
+  }
+  .modal input[type=text]:focus{border-color:var(--gold);}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;}
+  .btn-secondary{
+    background:transparent;border:1px solid var(--line);border-radius:9px;
+    padding:9px 16px;cursor:pointer;font-family:'IBM Plex Sans Arabic';font-size:13px;color:var(--ink-soft);
+  }
+  .btn-primary{
+    background:var(--green);color:#fff;border:none;border-radius:9px;
+    padding:9px 18px;cursor:pointer;font-family:'IBM Plex Sans Arabic';font-weight:600;font-size:13px;
+  }
+  .toast{
+    position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+    background:var(--ink);color:#fff;padding:11px 22px;border-radius:30px;
+    font-size:13px;opacity:0;transition:opacity .25s ease, transform .25s ease;
+    z-index:60;pointer-events:none;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
+  .no-url-banner{
+    background:#F6E9D8;border:1px solid #E4C99A;color:#7A5620;padding:12px 16px;
+    border-radius:12px;font-size:13px;margin-bottom:18px;display:flex;justify-content:space-between;
+    align-items:center;gap:10px;flex-wrap:wrap;
+  }
+  .no-url-banner button{
+    background:var(--gold);color:#fff;border:none;border-radius:8px;padding:8px 14px;
+    font-size:12.5px;cursor:pointer;white-space:nowrap;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand">
+      <h1>دفتر حسابات المحل</h1>
+      <p>تسجيل يومي للكاش والشبكة، محسوب تلقائيًا</p>
+    </div>
+    <button class="gear-btn" id="settingsBtn" title="الإعدادات">⚙</button>
+  </div>
+
+  <div class="no-url-banner" id="noUrlBanner" style="display:none;">
+    <span>لسه ما ربطت البرنامج بجوجل شيت. اضغط الزر عشان تحط الرابط.</span>
+    <button id="connectNowBtn">ربط الآن</button>
+  </div>
+
+  <div class="date-row">
+    <label>تاريخ اليوم:</label>
+    <input type="date" id="dateInput">
+    <span class="status-pill" id="statusPill">يوم جديد</span>
+  </div>
+
+  <div class="cards">
+    <div class="card cash">
+      <div class="card-head"><span>قسم الكاش</span><span class="tag">CASH</span></div>
+      <div class="card-body">
+        <div class="field">
+          <label>المبيعات</label>
+          <input type="number" id="sales" inputmode="decimal" placeholder="0">
+        </div>
+        <div class="field">
+          <label>المشتريات</label>
+          <input type="number" id="purchases" inputmode="decimal" placeholder="0">
+        </div>
+        <div class="field">
+          <label>المصاريف</label>
+          <input type="number" id="expenses" inputmode="decimal" placeholder="0">
+        </div>
+      </div>
+      <div style="padding:0 18px;">
+        <div class="tape" id="cashTape">
+          <div class="tape-row"><span>المبيعات</span><span id="t_sales">٠٫٠٠</span></div>
+          <div class="tape-row"><span>ناقص المشتريات</span><span id="t_purchases">- ٠٫٠٠</span></div>
+          <div class="tape-row"><span>ناقص المصاريف</span><span id="t_expenses">- ٠٫٠٠</span></div>
+          <div class="tape-row total" id="t_netCashRow"><span>صافي الكاش</span><span id="t_netCash">٠٫٠٠</span></div>
+        </div>
+      </div>
+      <div class="hint">صافي الكاش = المبيعات − المشتريات − المصاريف</div>
+    </div>
+
+    <div class="card network">
+      <div class="card-head"><span>قسم الشبكة</span><span class="tag">NETWORK</span></div>
+      <div class="card-body">
+        <div class="field">
+          <label>الشبكة للمحل</label>
+          <input type="number" id="networkStore" inputmode="decimal" placeholder="0">
+        </div>
+        <div class="field">
+          <label>الشبكة للآخرين
+            <small>مبالغ محلات ثانية، للتوثيق فقط</small>
+          </label>
+          <input type="number" id="networkOthers" inputmode="decimal" placeholder="0">
+        </div>
+      </div>
+      <div style="padding:0 18px;">
+        <div class="tape" id="networkTape">
+          <div class="tape-row"><span>الشبكة للمحل</span><span id="t_networkStore">٠٫٠٠</span></div>
+          <div class="tape-row"><span>الشبكة للآخرين (أمانة)</span><span id="t_networkOthers">٠٫٠٠</span></div>
+          <div class="tape-row total"><span>صافي الشبكة</span><span id="t_netNetwork">٠٫٠٠</span></div>
+        </div>
+      </div>
+      <div class="hint">صافي الشبكة = الشبكة للمحل فقط (حصة الآخرين أمانة ما تدخل حسابك)</div>
+    </div>
+  </div>
+
+  <div class="footer-summary">
+    <div class="box">
+      <div class="lbl">صافي الكاش</div>
+      <div class="val" id="sum_netCash">٠٫٠٠</div>
+    </div>
+    <div class="box">
+      <div class="lbl">صافي الشبكة</div>
+      <div class="val" id="sum_netNetwork">٠٫٠٠</div>
+    </div>
+    <div class="box">
+      <div class="lbl">إجمالي الصندوق</div>
+      <div class="val" id="sum_total">٠٫٠٠</div>
+    </div>
+    <button class="save-btn" id="saveBtn">حفظ اليوم</button>
+  </div>
+
+  <div class="section-title">السجل الشهري</div>
+  <div id="historyContainer">
+    <div class="empty-state">لسه ما فيه بيانات محفوظة.</div>
+  </div>
+
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3>ربط جوجل شيت</h3>
+    <p>
+      حط رابط الويب أب (Web app URL) اللي حصلت عليه بعد نشر كود Apps Script على شيتك.
+      البيانات كلها بتتخزن بشيتك الخاص، ما تتخزن عندنا.
+    </p>
+    <input type="text" id="urlInput" placeholder="https://script.google.com/macros/s/....../exec">
+    <div class="modal-actions">
+      <button class="btn-secondary" id="modalCancel">إلغاء</button>
+      <button class="btn-primary" id="modalSave">حفظ الرابط</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const ids = ['sales','purchases','expenses','networkStore','networkOthers'];
+let webAppUrl = null;
+let history = []; // cached rows from sheet
+let isEditingExisting = false;
+
+function fmt(n){
+  n = Number(n)||0;
+  return n.toLocaleString('ar-EG', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function todayStr(){
+  const d = new Date();
+  const tz = d.getTimezoneOffset()*60000;
+  return new Date(d - tz).toISOString().slice(0,10);
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+function recalc(){
+  const sales = Number(document.getElementById('sales').value)||0;
+  const purchases = Number(document.getElementById('purchases').value)||0;
+  const expenses = Number(document.getElementById('expenses').value)||0;
+  const networkStore = Number(document.getElementById('networkStore').value)||0;
+  const networkOthers = Number(document.getElementById('networkOthers').value)||0;
+
+  const netCash = sales - purchases - expenses;
+  const netNetwork = networkStore;
+  const total = netCash + netNetwork;
+
+  document.getElementById('t_sales').textContent = fmt(sales);
+  document.getElementById('t_purchases').textContent = '- ' + fmt(purchases);
+  document.getElementById('t_expenses').textContent = '- ' + fmt(expenses);
+  document.getElementById('t_netCash').textContent = fmt(netCash);
+  document.getElementById('t_netCashRow').classList.toggle('neg', netCash < 0);
+
+  document.getElementById('t_networkStore').textContent = fmt(networkStore);
+  document.getElementById('t_networkOthers').textContent = fmt(networkOthers);
+  document.getElementById('t_netNetwork').textContent = fmt(netNetwork);
+
+  document.getElementById('sum_netCash').textContent = fmt(netCash);
+  document.getElementById('sum_netNetwork').textContent = fmt(netNetwork);
+  document.getElementById('sum_total').textContent = fmt(total);
+
+  return {sales, purchases, expenses, netCash, networkStore, networkOthers, netNetwork};
+}
+
+ids.forEach(id => document.getElementById(id).addEventListener('input', recalc));
+
+// ---- settings (Web App URL) via persistent artifact storage ----
+async function loadSettings(){
+  try{
+    const res = await window.storage.get('shop_ledger_webapp_url', false);
+    if(res && res.value){
+      webAppUrl = res.value;
+      document.getElementById('noUrlBanner').style.display = 'none';
+      await refreshHistory();
+    } else {
+      document.getElementById('noUrlBanner').style.display = 'flex';
+    }
+  }catch(err){
+    document.getElementById('noUrlBanner').style.display = 'flex';
+  }
+}
+async function saveSettings(url){
+  try{
+    await window.storage.set('shop_ledger_webapp_url', url, false);
+    webAppUrl = url;
+    document.getElementById('noUrlBanner').style.display = 'none';
+    showToast('تم حفظ الرابط بنجاح');
+    await refreshHistory();
+  }catch(err){
+    showToast('صار خطأ بحفظ الرابط، حاول مرة ثانية');
+  }
+}
+
+document.getElementById('settingsBtn').onclick = openModal;
+document.getElementById('connectNowBtn').onclick = openModal;
+document.getElementById('modalCancel').onclick = closeModal;
+function openModal(){
+  document.getElementById('urlInput').value = webAppUrl || '';
+  document.getElementById('modalBg').classList.add('show');
+}
+function closeModal(){ document.getElementById('modalBg').classList.remove('show'); }
+document.getElementById('modalSave').onclick = () => {
+  const url = document.getElementById('urlInput').value.trim();
+  if(!url){ showToast('حط الرابط أول'); return; }
+  closeModal();
+  saveSettings(url);
+};
+
+// ---- data sync ----
+async function refreshHistory(){
+  if(!webAppUrl) return;
+  const container = document.getElementById('historyContainer');
+  try{
+    const res = await fetch(webAppUrl);
+    const json = await res.json();
+    if(json.status === 'ok'){
+      history = json.data || [];
+      history.sort((a,b)=> a.date < b.date ? 1 : -1);
+      renderHistory();
+      loadDateIntoForm(document.getElementById('dateInput').value);
+    } else {
+      showToast('تعذر تحميل البيانات من الشيت');
+    }
+  }catch(err){
+    container.innerHTML = '<div class="empty-state">تعذر الاتصال بجوجل شيت. تأكد من الرابط ومن إعدادات النشر (Anyone).</div>';
+  }
+}
+
+function renderHistory(){
+  const container = document.getElementById('historyContainer');
+  if(!history.length){
+    container.innerHTML = '<div class="empty-state">لسه ما فيه بيانات محفوظة.</div>';
+    return;
+  }
+  const months = {};
+  history.forEach(r=>{
+    const key = r.date.slice(0,7);
+    if(!months[key]) months[key] = [];
+    months[key].push(r);
+  });
+  const monthKeys = Object.keys(months).sort().reverse();
+  const monthNames = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+
+  let html = '';
+  monthKeys.forEach((key, idx) => {
+    const rows = months[key];
+    const totalCash = rows.reduce((s,r)=>s+Number(r.netCash||0),0);
+    const totalNet = rows.reduce((s,r)=>s+Number(r.netNetwork||0),0);
+    const [y,m] = key.split('-');
+    const label = monthNames[parseInt(m,10)-1] + ' ' + y;
+
+    html += `<div class="month-block ${idx===0?'':'collapsed'}" data-key="${key}">
+      <div class="month-head">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="chev">▾</span><span>${label}</span>
+        </div>
+        <div class="totals">
+          <span class="c">كاش: ${fmt(totalCash)}</span>
+          <span class="n">شبكة: ${fmt(totalNet)}</span>
+        </div>
+      </div>
+      <div class="rows-wrap">
+        <table>
+          <thead><tr>
+            <th>التاريخ</th><th>مبيعات</th><th>مشتريات</th><th>مصاريف</th>
+            <th>صافي الكاش</th><th>شبكة للمحل</th><th>للآخرين</th><th>صافي الشبكة</th>
+          </tr></thead>
+          <tbody>
+            ${rows.sort((a,b)=> a.date<b.date?1:-1).map(r=>`
+              <tr class="editable-row" data-date="${r.date}">
+                <td class="date-cell">${r.date}</td>
+                <td>${fmt(r.sales)}</td>
+                <td>${fmt(r.purchases)}</td>
+                <td>${fmt(r.expenses)}</td>
+                <td class="net-cash">${fmt(r.netCash)}</td>
+                <td>${fmt(r.networkStore)}</td>
+                <td>${fmt(r.networkOthers)}</td>
+                <td class="net-net">${fmt(r.netNetwork)}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  });
+  container.innerHTML = html;
+
+  container.querySelectorAll('.month-head').forEach(h=>{
+    h.addEventListener('click', ()=> h.parentElement.classList.toggle('collapsed'));
+  });
+  container.querySelectorAll('.editable-row').forEach(row=>{
+    row.addEventListener('click', ()=>{
+      document.getElementById('dateInput').value = row.dataset.date;
+      loadDateIntoForm(row.dataset.date);
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+  });
+}
+
+function loadDateIntoForm(dateStr){
+  const existing = history.find(r=>r.date === dateStr);
+  const pill = document.getElementById('statusPill');
+  if(existing){
+    document.getElementById('sales').value = existing.sales;
+    document.getElementById('purchases').value = existing.purchases;
+    document.getElementById('expenses').value = existing.expenses;
+    document.getElementById('networkStore').value = existing.networkStore;
+    document.getElementById('networkOthers').value = existing.networkOthers;
+    pill.textContent = 'يوم محفوظ (تقدر تعدله)';
+    pill.classList.add('editing');
+    isEditingExisting = true;
+  } else {
+    ids.forEach(id => document.getElementById(id).value = '');
+    pill.textContent = 'يوم جديد';
+    pill.classList.remove('editing');
+    isEditingExisting = false;
+  }
+  recalc();
+}
+
+document.getElementById('dateInput').addEventListener('change', (e)=> loadDateIntoForm(e.target.value));
+
+document.getElementById('saveBtn').addEventListener('click', async ()=>{
+  if(!webAppUrl){ openModal(); return; }
+  const date = document.getElementById('dateInput').value;
+  if(!date){ showToast('اختر التاريخ أول'); return; }
+  const values = recalc();
+  const payload = { date, ...values };
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true;
+  btn.textContent = 'جاري الحفظ...';
+  try{
+    await fetch(webAppUrl, {
+      method: 'POST',
+      headers: {'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload)
+    });
+    showToast('تم حفظ يوم ' + date);
+    await refreshHistory();
+  }catch(err){
+    showToast('صار خطأ أثناء الحفظ، حاول مرة ثانية');
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'حفظ اليوم';
+  }
+});
+
+// init
+document.getElementById('dateInput').value = todayStr();
+recalc();
+loadSettings();
+</script>
+</body>
+</html>
