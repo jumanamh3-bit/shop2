@@ -260,12 +260,6 @@
       <h1>حسابات المحل2</h1>
       <p>تقارير يومية وشهرية</p>
     </div>
-    <button class="gear-btn" id="settingsBtn" title="الإعدادات">⚙</button>
-  </div>
-
-  <div class="no-url-banner" id="noUrlBanner" style="display:none;">
-    <span>لم يتم الربط</span>
-    <button id="connectNowBtn">ربط الآن</button>
   </div>
 
   <div class="date-row">
@@ -375,21 +369,8 @@
   <div id="historyContainer">
     <div class="empty-state">لا توجد بيانات محفوظة.</div>
   </div>
-
 </div>
 
-<div class="modal-bg" id="modalBg">
-  <div class="modal">
-    <h3>ربط جوجل شيت</h3>
-    <p>
-    </p>
-    <input type="text" id="urlInput" placeholder="https://script.google.com/macros/s/....../exec">
-    <div class="modal-actions">
-      <button class="btn-secondary" id="modalCancel">إلغاء</button>
-      <button class="btn-primary" id="modalSave">حفظ الرابط</button>
-    </div>
-  </div>
-</div>
 
 <div class="toast" id="toast"></div>
 
@@ -472,40 +453,8 @@ function recalc(){
 ids.forEach(id => document.getElementById(id).addEventListener('input', recalc));
 
 // ---- settings (Web App URL) ----
-async function loadSettings(){
-  let saved = null;
-  try{ saved = localStorage.getItem('shop_ledger_webapp_url_v2'); }catch(err){}
-  webAppUrl = saved || DEFAULT_WEB_APP_URL;
-  if(webAppUrl){
-    document.getElementById('noUrlBanner').style.display = 'none';
-    await refreshHistory();
-  } else {
-    document.getElementById('noUrlBanner').style.display = 'flex';
-  }
-}
-async function saveSettings(url){
-  try{ localStorage.setItem('shop_ledger_webapp_url_v2', url); }catch(err){}
-  webAppUrl = url;
-  document.getElementById('noUrlBanner').style.display = 'none';
-  showToast('تم حفظ الرابط بنجاح');
-  await refreshHistory();
-}
-
-document.getElementById('settingsBtn').onclick = openModal;
-document.getElementById('connectNowBtn').onclick = openModal;
-document.getElementById('modalCancel').onclick = closeModal;
-function openModal(){
-  document.getElementById('urlInput').value = webAppUrl || '';
-  document.getElementById('modalBg').classList.add('show');
-}
-function closeModal(){ document.getElementById('modalBg').classList.remove('show'); }
-document.getElementById('modalSave').onclick = () => {
-  const url = document.getElementById('urlInput').value.trim();
-  if(!url){ showToast('الرابط أول'); return; }
-  closeModal();
-  saveSettings(url);
-};
-
+webAppUrl = DEFAULT_WEB_APP_URL;
+  
 // ---- data sync ----
 async function refreshHistory(){
   if(!webAppUrl) return;
@@ -705,7 +654,8 @@ document.getElementById('deleteBtn').addEventListener('click', ()=>{
 // init
 document.getElementById('dateInput').value = todayStr();
 recalc();
-loadSettings();
+webAppUrl = DEFAULT_WEB_APP_URL;
+refreshHistory();
 </script>
 </body>
 </html>
